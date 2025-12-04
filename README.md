@@ -6,6 +6,9 @@ CodeAtlas is a developer tool that visualizes directory structures and uses a Sm
 
 **[Download CodeAtlas v1.0.0 (Windows .exe)](https://github.com/Voyager466920/CodeAtlas/releases/tag/v1.0.0)**
 
+> [!NOTE]
+> **Windows SmartScreen Warning**: Because this application is not code-signed (which requires a paid certificate), Windows may flag it as unrecognized or unsafe. This is normal for open-source tools. Click **"More info"** -> **"Run anyway"** to proceed.
+
 ## Features
 
 *   **Folder Structure Visualization**: Visualizes the folder structure of a specified path as a mind map.
@@ -64,6 +67,9 @@ Access `http://localhost:8000` in your browser.
 ## 📥 다운로드 (Download)
 
 **[CodeAtlas v1.0.0 다운로드 (Windows .exe)](https://github.com/Voyager466920/CodeAtlas/releases/tag/v1.0.0)**
+
+> [!NOTE]
+> **Windows 보안 경고**: 이 프로그램은 코드 서명 인증서(유료)가 적용되지 않았기 때문에, Windows에서 "인식할 수 없는 앱" 또는 "안전하지 않음"으로 차단할 수 있습니다. 이는 오픈소스 도구에서 흔히 발생하는 현상입니다. **"추가 정보"** -> **"실행"**을 클릭하면 정상적으로 설치할 수 있습니다.
 
 ## 기능
 
