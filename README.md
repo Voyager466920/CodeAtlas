@@ -1,6 +1,69 @@
-# File Structure Visualization Tool
+# CodeAtlas - File Structure Visualization Tool
+
+CodeAtlas is a developer tool that visualizes directory structures and uses a Small Language Model (SLM) to summarize the contents of each file.
+
+## 📥 Download
+
+**[Download CodeAtlas v1.0.0 (Windows .exe)](https://github.com/Voyager466920/CodeAtlas/releases/tag/v1.0.0)**
+
+## Features
+
+*   **Folder Structure Visualization**: Visualizes the folder structure of a specified path as a mind map.
+*   **AI File Analysis**: Uses a local SLM to summarize file contents and extract keywords.
+*   **Markdown Export**: Saves the analyzed results in Markdown table format.
+*   **Local Execution**: All data is processed locally and is not sent externally.
+
+## Installation (For Developers)
+
+If you want to run the source code directly instead of using the executable:
+
+1.  **Python Installation**: Python 3.8 or higher is required.
+2.  **Clone Repository**:
+    ```bash
+    git clone https://github.com/Voyager466920/CodeAtlas.git
+    cd CodeAtlas
+    ```
+3.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+    *   Note: A compiler might be required for `llama-cpp-python`. Refer to the [official documentation](https://github.com/abetlen/llama-cpp-python) if errors occur.
+
+## Model Setup
+
+This tool uses the `Qwen2.5-7B-Instruct` model (GGUF format). **The model file is not included in the GitHub repository and must be downloaded manually.**
+
+1.  Create a `models` folder in the project root.
+2.  Download `qwen2.5-7b-instruct-q4_k_m.gguf` (or a compatible model) from Hugging Face and place it in the `models` folder.
+3.  Ensure the filename matches `qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf` (or update the path in `backend/services/slm.py`).
+
+## Usage
+
+### Windows
+
+Double-click `run.bat` or run it from the terminal:
+
+```cmd
+run.bat
+```
+
+### Manual Execution
+
+```bash
+python backend/main.py
+```
+
+Access `http://localhost:8000` in your browser.
+
+---
+
+# CodeAtlas - 파일 구조 시각화 도구 (Korean)
 
 이 도구는 디렉토리 구조를 시각화하고, SLM(Small Language Model)을 사용하여 각 파일의 내용을 요약해주는 개발자용 도구입니다.
+
+## 📥 다운로드 (Download)
+
+**[CodeAtlas v1.0.0 다운로드 (Windows .exe)](https://github.com/Voyager466920/CodeAtlas/releases/tag/v1.0.0)**
 
 ## 기능
 
@@ -9,13 +72,15 @@
 *   **Markdown 내보내기**: 분석된 결과를 Markdown 표 형태로 저장할 수 있습니다.
 *   **로컬 실행**: 모든 데이터는 로컬에서 처리되며 외부로 전송되지 않습니다.
 
-## 설치 방법
+## 설치 방법 (개발자용)
+
+실행 파일(.exe)이 아닌 소스 코드를 직접 실행하려면 다음 단계를 따르세요.
 
 1.  **Python 설치**: Python 3.8 이상이 설치되어 있어야 합니다.
 2.  **저장소 복제**:
     ```bash
-    git clone <repository-url>
-    cd file-structure-viz
+    git clone https://github.com/Voyager466920/CodeAtlas.git
+    cd CodeAtlas
     ```
 3.  **의존성 설치**:
     ```bash
