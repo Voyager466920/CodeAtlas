@@ -26,6 +26,12 @@ def test_export():
                 "path": os.path.join(root_path, "another_file.js"),
                 "summary": "Another summary.",
                 "keywords": ["javascript", "code"]
+            },
+            {
+                "name": "nested.py",
+                "path": os.path.join(root_path, "subdir", "nested.py"),
+                "summary": "Nested file summary.",
+                "keywords": ["python", "nested"]
             }
         ]
     }

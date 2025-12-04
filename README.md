@@ -34,7 +34,15 @@ If you want to run the source code directly instead of using the executable:
 
 ## Model Setup
 
-This tool uses the `Qwen2.5-7B-Instruct` model (GGUF format). **The model file is not included in the GitHub repository and must be downloaded manually.**
+This tool uses the `Qwen2.5-7B-Instruct` model (GGUF format).
+
+**Option 1: Automatic Download (Recommended)**
+1.  Run CodeAtlas.
+2.  Click the **Settings (⚙️)** icon in the top-right corner.
+3.  Click the **Download Model** button.
+
+**Option 2: Manual Download**
+The model file is not included in the GitHub repository and must be downloaded manually.
 
 1.  Create a `models` folder in the project root.
 2.  Download `qwen2.5-7b-instruct-q4_k_m.gguf` (or a compatible model) from Hugging Face and place it in the `models` folder.
@@ -96,7 +104,15 @@ Access `http://localhost:8000` in your browser.
 
 ## 모델 설정
 
-이 도구는 `Qwen2.5-7B-Instruct` 모델(GGUF 포맷)을 사용합니다. **GitHub에는 모델 파일이 포함되어 있지 않으므로 직접 다운로드해야 합니다.**
+이 도구는 `Qwen2.5-7B-Instruct` 모델(GGUF 포맷)을 사용합니다.
+
+**방법 1: 자동 다운로드 (권장)**
+1.  CodeAtlas를 실행합니다.
+2.  우측 상단의 **설정(⚙️)** 아이콘을 클릭합니다.
+3.  **모델 다운로드(Download Model)** 버튼을 클릭합니다.
+
+**방법 2: 수동 다운로드**
+GitHub에는 모델 파일이 포함되어 있지 않으므로 직접 다운로드해야 합니다.
 
 1.  프로젝트 루트에 `models` 폴더를 생성합니다.
 2.  Hugging Face 등에서 `qwen2.5-7b-instruct-q4_k_m.gguf` (또는 호환되는 모델)을 다운로드하여 `models` 폴더에 넣습니다.

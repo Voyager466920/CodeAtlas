@@ -154,8 +154,15 @@ async def export_report(request: ExportRequest):
                     
                     # Create clickable link (File URI)
                     link_path = path.replace(" ", "%20").replace("\\", "/")
-                    # User requested Path column to be clickable
-                    path_link = f"[{path}](file:///{link_path})"
+                    try:
+                        rel_path = os.path.relpath(path, request.root_path)
+                        root_name = os.path.basename(request.root_path.rstrip(os.sep))
+                        display_path = os.path.join(root_name, rel_path)
+                    except ValueError:
+                        display_path = name
+
+                    # User requested Path column to be clickable, showing relative path from root node
+                    path_link = f"[{display_path}](file:///{link_path})"
                     
                     f.write(f"| {name} | {path_link} | {summary} |\n")
                 
