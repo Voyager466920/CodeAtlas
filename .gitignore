@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Distribution / Build
+dist/
+build/
+# *.spec
+
+# IDEs
+.vscode/
+.idea/
+
+# Models (Large files)
+models/*.gguf

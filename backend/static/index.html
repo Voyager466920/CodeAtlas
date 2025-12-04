@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAtlas</title>
+    <link rel="icon" href="/static/logo.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reactflow@11.10.1/dist/umd/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reactflow@11.10.1/dist/style.min.css" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .react-flow__node {
+            font-size: 14px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Disable clicks on ReactFlow attribution */
+        .react-flow__attribution {
+            pointer-events: none;
+        }
+    </style>
+    <script>
+        window.onerror = function (message, source, lineno, colno, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.width = '100%';
+            errorDiv.style.backgroundColor = 'red';
+            errorDiv.style.color = 'white';
+            errorDiv.style.padding = '20px';
+            errorDiv.style.zIndex = '9999';
+            errorDiv.style.fontSize = '16px';
+            errorDiv.innerHTML = `<h3>Error Detected</h3><p><strong>Message:</strong> ${message}</p><p><strong>Source:</strong> ${source}:${lineno}:${colno}</p>`;
+            document.body.appendChild(errorDiv);
+            console.error("Global Error:", message, error);
+        };
+    </script>
+</head>
+
+<body class="bg-gray-900 text-white h-screen overflow-hidden">
+    <div id="root" class="h-full flex flex-col"></div>
+
+    <script type="text/babel" data-presets="env,react">
+        const { useState, useCallback, useRef, useEffect } = React;
+        const { ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState } = window.ReactFlow;
+
+        const translations = {
+            ko: {
+                title: "CodeAtlas",
+                placeholder: "분석할 폴더 경로 입력 (예: C:\\Projects\\MyApp)",
+                selectFolder: "폴더 선택",
+                analyzeBtn: "구조 분석",
+                analyzingBtn: "구조 분석 중...",
+                fileListTitle: "파일 목록 & AI 분석",
+                aiLanguageLabel: "AI 분석 언어",
+                analyzingStatus: "분석 중...",
+                finalizingStatus: "마무리 중...",
+                stopBtn: "중단",
+                processing: "처리 중...",
+                viewResultsBtn: "결과 보기",
+                selectAnalyzeBtn: "선택 분석",
+                exportBtn: "MD 저장",
+                fileTypeSelection: "파일 유형별 선택",
+                selectAll: "전체 선택",
+                waitingAnalysis: "분석 대기 중...",
+                noFiles: "표시할 파일이 없습니다.",
+                summaryTitle: "분석 결과 요약",
+                tableFile: "파일",
+                tableSummary: "요약",
+                tableKeywords: "키워드",
+                noAnalyzedFiles: "분석 완료된 파일이 없습니다.",
+                closeBtn: "닫기",
+                exportSuccess: "보고서가 저장되었습니다:\n",
+                exportFail: "보고서 내보내기 실패: ",
+                analyzeError: "분석 중 오류가 발생했습니다: ",
+                selectFileAlert: "분석할 파일을 선택해주세요.",
+                noExportData: "내보낼 분석 결과가 없습니다.",
+                folderSelectError: "폴더 선택 오류: ",
+                folderSelectFail: "폴더 선택 요청 실패",
+                globalLangLabel: "System Language",
+                timeoutError: "분석 시간이 초과되었습니다 (30초). 디렉토리가 너무 클 수 있습니다.",
+                tooManyFilesError: "분석할 파일이 너무 많습니다. 더 작은 디렉토리를 선택해주세요.",
+                modelManagerTitle: "AI 모델 관리자",
+                settingsTitle: "설정",
+                modelName: "모델명",
+                status: "상태",
+                action: "작업",
+                installed: "설치됨",
+                notInstalled: "미설치",
+                download: "다운로드",
+                downloading: "다운로드 중...",
+                active: "사용 중",
+                close: "닫기",
+                modelDesc: "Qwen 2.5 7B Instruct (4-bit Quantized) - 한국어 및 코드 분석에 최적화된 모델입니다.",
+                size: "크기: 약 4.6 GB",
+                expectedPath: "예상 모델 경로",
+                checkAgain: "다시 확인"
+            },
+            en: {
+                title: "CodeAtlas",
+                placeholder: "Enter folder path to analyze (e.g., C:\\Projects\\MyApp)",
+                selectFolder: "Select Folder",
+                analyzeBtn: "Analyze Structure",
+                analyzingBtn: "Analyzing...",
+                fileListTitle: "Files & AI Analysis",
+                aiLanguageLabel: "AI Language",
+                analyzingStatus: "Analyzing...",
+                finalizingStatus: "Finalizing...",
+                stopBtn: "Stop",
+                processing: "Processing...",
+                viewResultsBtn: "Results",
+                selectAnalyzeBtn: "Analyze",
+                exportBtn: "Export",
+                fileTypeSelection: "Select by File Type",
+                selectAll: "Select All",
+                waitingAnalysis: "Waiting for analysis...",
+                noFiles: "No files to display.",
+                summaryTitle: "Analysis Summary",
+                tableFile: "File",
+                tableSummary: "Summary",
+                tableKeywords: "Keywords",
+                noAnalyzedFiles: "No analyzed files.",
+                closeBtn: "Close",
+                exportSuccess: "Report saved at:\n",
+                exportFail: "Export failed: ",
+                analyzeError: "Error during analysis: ",
+                selectFileAlert: "Please select files to analyze.",
+                noExportData: "No analysis results to export.",
+                folderSelectError: "Folder selection error: ",
+                folderSelectFail: "Folder selection request failed",
+                globalLangLabel: "System Language",
+                timeoutError: "Analysis timed out (30s). The directory might be too large.",
+                tooManyFilesError: "Too many files to analyze. Please select a smaller directory.",
+                modelManagerTitle: "AI Model Manager",
+                settingsTitle: "Settings",
+                modelName: "Model Name",
+                status: "Status",
+                action: "Action",
+                installed: "Installed",
+                notInstalled: "Not Installed",
+                download: "Download",
+                downloading: "Downloading...",
+                active: "Active",
+                close: "Close",
+                modelDesc: "Qwen 2.5 7B Instruct (4-bit Quantized) - Optimized for Korean and code analysis.",
+                size: "Size: ~4.6 GB",
+                expectedPath: "Expected Model Path",
+                checkAgain: "Check Again"
+            }
+        };
+
+        const dagreGraph = new dagre.graphlib.Graph();
+        dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+        const getLayoutedElements = (nodes, edges, direction = 'LR') => {
+            const isHorizontal = direction === 'LR';
+            dagreGraph.setGraph({ rankdir: direction });
+
+            nodes.forEach((node) => {
+                const width = node.width || 172;
+                const height = node.height || 36;
+                dagreGraph.setNode(node.id, { width, height });
+            });
+
+            edges.forEach((edge) => {
+                dagreGraph.setEdge(edge.source, edge.target);
+            });
+
+            dagre.layout(dagreGraph);
+
+            nodes.forEach((node) => {
+                const nodeWithPosition = dagreGraph.node(node.id);
+                node.targetPosition = isHorizontal ? 'left' : 'top';
+                node.sourcePosition = isHorizontal ? 'right' : 'bottom';
+
+                const width = node.width || 172;
+                const height = node.height || 36;
+
+                node.position = {
+                    x: nodeWithPosition.x - width / 2,
+                    y: nodeWithPosition.y - height / 2,
+                };
+
+                return node;
+            });
+
+            return { nodes, edges };
+        };
+
+        function Modal({ isOpen, onClose, title, children, closeText }) {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-gray-700">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                            <h3 className="text-xl font-semibold text-white">{title}</h3>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-4 overflow-auto flex-1">
+                            {children}
+                        </div>
+                        <div className="p-4 border-t border-gray-700 flex justify-end">
+                            <button onClick={onClose} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">
+                                {closeText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function SettingsModal({ isOpen, onClose, onDownload, progress, modelExists, modelPath, onCheckModel, t }) {
+            if (!isOpen) return null;
+
+            const isDownloading = progress.status === 'downloading';
+            const percentage = progress.total > 0 ? Math.round((progress.progress / progress.total) * 100) : 0;
+            const sizeMB = progress.total > 0 ? (progress.total / (1024 * 1024)).toFixed(1) : '0';
+            const downloadedMB = progress.progress > 0 ? (progress.progress / (1024 * 1024)).toFixed(1) : '0';
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6 border border-gray-700">
+                        <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                            <h3 className="text-xl font-bold text-white">{t('settingsTitle')}</h3>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="mb-6">
+                            <h4 className="text-lg font-semibold text-gray-300 mb-4">{t('modelManagerTitle')}</h4>
+                            <div className="bg-gray-700 rounded-lg p-4 border border-gray-600">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h5 className="text-base font-semibold text-white">Qwen 2.5-7B-Instruct</h5>
+                                            {modelExists && (
+                                                <span className="bg-green-900 text-green-200 text-xs px-2 py-0.5 rounded border border-green-700">
+                                                    {t('active')}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-400 mb-1">{t('modelDesc')}</p>
+                                        <p className="text-xs text-gray-500">{t('size')}</p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
+                                        <span className={`text-sm font-medium ${modelExists ? 'text-green-400' : 'text-gray-400'}`}>
+                                            {modelExists ? t('installed') : t('notInstalled')}
+                                        </span>
+                                        {!modelExists && !isDownloading && (
+                                            <button
+                                                onClick={onDownload}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors"
+                                            >
+                                                {t('download')}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Path Information */}
+                                <div className="bg-gray-800 p-3 rounded text-xs font-mono text-gray-400 break-all border border-gray-600 mb-2">
+                                    <span className="block text-gray-500 mb-1 font-sans">{t('expectedPath')}:</span>
+                                    {modelPath || "Loading..."}
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={onCheckModel}
+                                        className="text-xs text-blue-400 hover:text-blue-300 underline"
+                                    >
+                                        {t('checkAgain')}
+                                    </button>
+                                </div>
+
+                                {isDownloading && (
+                                    <div className="mt-4 bg-gray-900 rounded p-4 border border-gray-700">
+                                        <div className="flex justify-between text-sm text-gray-300 mb-2">
+                                            <span>{t('downloading')}</span>
+                                            <span>{percentage}%</span>
+                                        </div>
+                                        <div className="w-full bg-gray-700 rounded-full h-2 mb-2 overflow-hidden">
+                                            <div
+                                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className="text-xs text-gray-500 text-right">{downloadedMB} / {sizeMB} MB</p>
+                                    </div>
+                                )}
+
+                                {progress.status === 'error' && (
+                                    <div className="mt-4 bg-red-900/50 border border-red-700 text-red-200 p-3 rounded text-sm">
+                                        Error: {progress.error}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <button
+                                onClick={onClose}
+                                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors"
+                            >
+                                {t('close')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [path, setPath] = useState("");
+            const [nodes, setNodes, onNodesChange] = useNodesState([]);
+            const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+            const [files, setFiles] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [analyzing, setAnalyzing] = useState(false);
+            const [processingStatus, setProcessingStatus] = useState('idle');
+            const [selectedFiles, setSelectedFiles] = useState(new Set());
+            const [showSummary, setShowSummary] = useState(false);
+            const [language, setLanguage] = useState('ko');
+            const [systemLang, setSystemLang] = useState('ko');
+            const [progress, setProgress] = useState({ current: 0, total: 0 });
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [modelExists, setModelExists] = useState(false);
+            const [modelPath, setModelPath] = useState("");
+            const [downloadProgress, setDownloadProgress] = useState({ status: 'idle', progress: 0, total: 0 });
+
+            const abortControllerRef = useRef(null);
+
+            const t = (key) => translations[systemLang][key] || key;
+
+            // Check model status on mount
+            useEffect(() => {
+                checkModel();
+            }, []);
+
+            const checkModel = async () => {
+                try {
+                    const res = await fetch('/model_status');
+                    const data = await res.json();
+                    setModelExists(data.exists);
+                    setModelPath(data.path);
+                    if (!data.exists) {
+                        // Don't auto-show modal, just let user know via UI indicator if needed
+                        // setShowSettingsModal(true); 
+                    }
+                } catch (e) {
+                    console.error("Failed to check model status", e);
+                }
+            };
+
+            const handleDownloadModel = async () => {
+                try {
+                    const res = await fetch('/download_model', { method: 'POST' });
+                    const data = await res.json();
+                    if (data.status === 'started' || data.status === 'already_downloading') {
+                        pollDownloadProgress();
+                    }
+                } catch (e) {
+                    console.error("Download start failed", e);
+                    setDownloadProgress(prev => ({ ...prev, status: 'error', error: 'Failed to start download' }));
+                }
+            };
+
+            const pollDownloadProgress = () => {
+                const interval = setInterval(async () => {
+                    try {
+                        const res = await fetch('/download_progress');
+                        const data = await res.json();
+                        setDownloadProgress(data);
+
+                        if (data.status === 'completed') {
+                            clearInterval(interval);
+                            alert("Model download completed! Please restart the application if needed.");
+                            setModelExists(true);
+                            // setShowSettingsModal(false); // Keep open to show installed status
+                        } else if (data.status === 'error') {
+                            clearInterval(interval);
+                        }
+                    } catch (e) {
+                        console.error("Polling failed", e);
+                    }
+                }, 1000);
+            };
+
+            // Sync AI Language with System Language
+            useEffect(() => {
+                setLanguage(systemLang);
+            }, [systemLang]);
+
+            const handleExport = async () => {
+                if (analyzedFiles.length === 0) {
+                    alert(t('noExportData'));
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`http://localhost:8000/export_report`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            root_path: path,
+                            files: analyzedFiles
+                        })
+                    });
+
+                    if (!response.ok) throw new Error(await response.text());
+
+                    const result = await response.json();
+                    alert(`${t('exportSuccess')}${result.path}`);
+                } catch (error) {
+                    console.error("Export Error:", error);
+                    alert(t('exportFail') + error.message);
+                }
+            };
+
+            const handleAnalyze = async () => {
+                if (!path) return;
+                setLoading(true);
+                setNodes([]);
+                setEdges([]);
+                setFiles([]);
+                setSelectedFiles(new Set());
+                setProcessingStatus('idle');
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+                try {
+                    const response = await fetch(`http://localhost:8000/analyze`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path }),
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        if (response.status === 400 && errorText.includes("File limit exceeded")) {
+                            throw new Error(t('tooManyFilesError'));
+                        }
+                        throw new Error(errorText);
+                    }
+
+                    const data = await response.json();
+                    const { nodes: initialNodes, edges: initialEdges, fileList } = processTree(data);
+
+                    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+                        initialNodes,
+                        initialEdges
+                    );
+
+                    setNodes(layoutedNodes);
+                    setEdges(layoutedEdges);
+                    setFiles(fileList);
+
+                } catch (error) {
+                    console.error("Error:", error);
+                    if (error.name === 'AbortError') {
+                        alert(t('timeoutError'));
+                    } else {
+                        alert(t('analyzeError') + error.message);
+                    }
+                } finally {
+                    setLoading(false);
+                    clearTimeout(timeoutId);
+                }
+            };
+
+            const startFileAnalysis = async (filesToAnalyze = null) => {
+                if (analyzing) return;
+
+                const targetFiles = filesToAnalyze || files.filter(f => selectedFiles.has(f.path) && f.type === 'file');
+                if (targetFiles.length === 0) {
+                    alert(t('selectFileAlert'));
+                    return;
+                }
+
+                setAnalyzing(true);
+                setProcessingStatus('analyzing');
+                setProgress({ current: 0, total: targetFiles.length });
+                abortControllerRef.current = new AbortController();
+
+                let completedCount = 0;
+
+                for (const file of targetFiles) {
+                    if (abortControllerRef.current.signal.aborted) break;
+                    if (file.type !== 'file') continue;
+
+                    try {
+                        const res = await fetch(`http://localhost:8000/analyze_file`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: file.path, language }),
+                            signal: abortControllerRef.current.signal
+                        });
+                        const result = await res.json();
+
+                        setFiles(prev => prev.map(f =>
+                            f.path === file.path ? { ...f, ...result } : f
+                        ));
+                    } catch (e) {
+                        if (e.name === 'AbortError') {
+                            console.log('Analysis aborted');
+                        } else {
+                            console.error("Analysis failed for", file.path, e);
+                        }
+                    } finally {
+                        completedCount++;
+                        setProgress(prev => ({ ...prev, current: completedCount }));
+                    }
+                }
+
+                if (!abortControllerRef.current.signal.aborted) {
+                    setProcessingStatus('finalizing');
+                    setTimeout(() => {
+                        setAnalyzing(false);
+                        setProcessingStatus('idle');
+                        setShowSummary(true);
+                    }, 1000);
+                } else {
+                    setAnalyzing(false);
+                    setProcessingStatus('idle');
+                }
+
+                abortControllerRef.current = null;
+            };
+
+            const stopAnalysis = () => {
+                if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                }
+            };
+
+            const toggleFileSelection = (filePath) => {
+                setSelectedFiles(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(filePath)) {
+                        newSet.delete(filePath);
+                    } else {
+                        newSet.add(filePath);
+                    }
+                    return newSet;
+                });
+            };
+
+            const toggleAllSelection = () => {
+                if (selectedFiles.size === files.length) {
+                    setSelectedFiles(new Set());
+                } else {
+                    setSelectedFiles(new Set(files.map(f => f.path)));
+                }
+            };
+
+            const processTree = (root) => {
+                const nodes = [];
+                const edges = [];
+                const fileList = [];
+
+                const traverse = (node, parentId = null) => {
+                    const id = node.path;
+
+                    const labelLength = node.name.length;
+                    const fontSize = 14;
+                    const estimatedWidth = Math.max(180, labelLength * 10 + 40);
+                    const nodeHeight = 45;
+
+                    nodes.push({
+                        id,
+                        data: { label: node.name },
+                        position: { x: 0, y: 0 },
+                        width: estimatedWidth,
+                        height: nodeHeight,
+                        style: {
+                            background: node.type === 'directory' ? '#374151' : '#1f2937',
+                            color: '#fff',
+                            border: '1px solid #4b5563',
+                            borderRadius: '4px',
+                            padding: '10px',
+                            width: estimatedWidth,
+                            height: nodeHeight,
+                            fontSize: `${fontSize}px`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                        }
+                    });
+
+                    if (node.type === 'file') {
+                        fileList.push(node);
+                    }
+
+                    if (parentId) {
+                        edges.push({
+                            id: `${parentId}-${id}`,
+                            source: parentId,
+                            target: id,
+                            type: 'smoothstep',
+                            animated: true,
+                            style: { stroke: '#6b7280' }
+                        });
+                    }
+
+                    if (node.children) {
+                        node.children.forEach(child => traverse(child, id));
+                    }
+                };
+
+                traverse(root);
+                return { nodes, edges, fileList };
+            };
+
+            const analyzedFiles = files.filter(f => f.summary);
+
+            return (
+                <div className="flex flex-col h-full">
+                    <SettingsModal
+                        isOpen={showSettingsModal}
+                        onClose={() => setShowSettingsModal(false)}
+                        onDownload={handleDownloadModel}
+                        progress={downloadProgress}
+                        modelExists={modelExists}
+                        modelPath={modelPath}
+                        onCheckModel={checkModel}
+                        t={t}
+                    />
+                    <header className="bg-gray-800 p-4 border-b border-gray-700 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <img src="/static/logo.png" alt="CodeAtlas Logo" className="w-8 h-8 rounded" />
+                            <h1 className="text-xl font-bold text-blue-400">{t('title')}</h1>
+                        </div>
+                        <div className="flex gap-2 w-1/2 items-center">
+                            <input
+                                type="text"
+                                value={path}
+                                onChange={(e) => setPath(e.target.value)}
+                                placeholder={t('placeholder')}
+                                className="flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                            />
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const res = await fetch('/select_directory', { method: 'POST' });
+                                        const data = await res.json();
+                                        if (data.path) setPath(data.path);
+                                        else if (data.error) alert(t('folderSelectError') + data.error);
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert(t('folderSelectFail'));
+                                    }
+                                }}
+                                className="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded text-sm transition-colors"
+                                title={t('selectFolder')}
+                            >
+                                📂
+                            </button>
+                            <button
+                                onClick={handleAnalyze}
+                                disabled={loading || analyzing}
+                                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
+                            >
+                                {loading ? t('analyzingBtn') : t('analyzeBtn')}
+                            </button>
+
+                            <button
+                                onClick={() => setSystemLang(prev => prev === 'ko' ? 'en' : 'ko')}
+                                className="ml-2 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs text-gray-300 border border-gray-600 flex items-center gap-1"
+                                title="Switch System Language"
+                            >
+                                🌐 {systemLang.toUpperCase()}
+                            </button>
+                            <button
+                                onClick={() => setShowSettingsModal(true)}
+                                className="ml-2 bg-gray-700 hover:bg-gray-600 p-2 rounded text-gray-300 border border-gray-600 flex items-center justify-center transition-colors"
+                                title={t('settingsTitle')}
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="flex flex-1 overflow-hidden">
+                        <div className="flex-1 h-full relative border-r border-gray-700">
+                            <ReactFlow
+                                nodes={nodes}
+                                edges={edges}
+                                onNodesChange={onNodesChange}
+                                onEdgesChange={onEdgesChange}
+                                fitView
+                            >
+                                <Background color="#333" gap={16} />
+                                <Controls />
+                                <MiniMap
+                                    style={{ height: 120, backgroundColor: '#1f2937' }}
+                                    maskColor="#111827"
+                                    nodeColor="#4b5563"
+                                    zoomable
+                                    pannable
+                                />
+                            </ReactFlow>
+                        </div>
+                        <div className="w-1/3 bg-gray-800 overflow-auto p-4 flex flex-col">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-semibold text-gray-300">{t('fileListTitle')}</h2>
+                                <div className="flex gap-2 items-center">
+                                    <div className="flex flex-col items-end mr-2">
+                                        <span className="text-[10px] text-gray-500 mb-0.5">{t('aiLanguageLabel')}</span>
+                                        <div className="flex bg-gray-700 rounded p-0.5">
+                                            <button
+                                                onClick={() => setLanguage('ko')}
+                                                disabled={analyzing}
+                                                className={`px-2 py-0.5 text-xs rounded ${language === 'ko' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'} ${analyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                KR
+                                            </button>
+                                            <button
+                                                onClick={() => setLanguage('en')}
+                                                disabled={analyzing}
+                                                className={`px-2 py-0.5 text-xs rounded ${language === 'en' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'} ${analyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                EN
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {analyzing ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-blue-400 animate-pulse">
+                                                {processingStatus === 'finalizing' ? t('finalizingStatus') : `${t('analyzingStatus')} (${progress.current}/${progress.total})`}
+                                            </span>
+                                            <button
+                                                onClick={stopAnalysis}
+                                                className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs transition-colors"
+                                            >
+                                                {t('stopBtn')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {analyzing && <span className="text-sm text-gray-400">{t('processing')}</span>}
+                                            <button
+                                                onClick={() => setShowSummary(true)}
+                                                disabled={analyzedFiles.length === 0}
+                                                className="bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded text-xs transition-colors disabled:opacity-50"
+                                                title={t('viewResultsBtn')}
+                                            >
+                                                {t('viewResultsBtn')}
+                                            </button>
+                                            <button
+                                                onClick={() => startFileAnalysis()}
+                                                disabled={files.length === 0}
+                                                className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs transition-colors disabled:opacity-50"
+                                                title={t('selectAnalyzeBtn')}
+                                            >
+                                                {t('selectAnalyzeBtn')}
+                                            </button>
+                                            <button
+                                                onClick={handleExport}
+                                                disabled={analyzedFiles.length === 0}
+                                                className="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-xs transition-colors disabled:opacity-50"
+                                                title={t('exportBtn')}
+                                            >
+                                                {t('exportBtn')}
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {files.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('fileTypeSelection')}</h3>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedFiles.size === files.length && files.length > 0}
+                                                onChange={toggleAllSelection}
+                                                className="mr-2"
+                                            />
+                                            <span className="text-xs text-gray-400">{t('selectAll')}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {Array.from(new Set(files.map(f => {
+                                            const parts = f.name.split('.');
+                                            return parts.length > 1 ? '.' + parts.pop() : 'no-ext';
+                                        }))).sort().map(ext => {
+                                            const filesOfExt = files.filter(f => {
+                                                const parts = f.name.split('.');
+                                                const fExt = parts.length > 1 ? '.' + parts.pop() : 'no-ext';
+                                                return fExt === ext;
+                                            });
+                                            const selectedCount = filesOfExt.filter(f => selectedFiles.has(f.path)).length;
+                                            const allSelected = selectedCount === filesOfExt.length;
+                                            const someSelected = selectedCount > 0 && !allSelected;
+
+                                            return (
+                                                <button
+                                                    key={ext}
+                                                    onClick={() => {
+                                                        const newSet = new Set(selectedFiles);
+                                                        if (allSelected) {
+                                                            filesOfExt.forEach(f => newSet.delete(f.path));
+                                                        } else {
+                                                            filesOfExt.forEach(f => newSet.add(f.path));
+                                                        }
+                                                        setSelectedFiles(newSet);
+                                                    }}
+                                                    className={`px-2 py-1 rounded text-xs border transition-colors flex items-center gap-1 ${allSelected
+                                                        ? 'bg-blue-900 border-blue-500 text-blue-100'
+                                                        : someSelected
+                                                            ? 'bg-gray-800 border-blue-500 text-gray-300'
+                                                            : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-500'
+                                                        }`}
+                                                >
+                                                    <span>{ext}</span>
+                                                    <span className="bg-black/30 px-1 rounded text-[10px]">{filesOfExt.length}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-3 flex-1 overflow-auto">
+                                {files.map((file, idx) => (
+                                    <div key={idx} className={`bg-gray-700 p-3 rounded border ${selectedFiles.has(file.path) ? 'border-blue-500' : 'border-gray-600'}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedFiles.has(file.path)}
+                                                    onChange={() => toggleFileSelection(file.path)}
+                                                />
+                                                <span className="font-medium text-blue-300 truncate" title={file.name}>{file.name}</span>
+                                            </div>
+                                            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded shrink-0">{file.type}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-300 mb-2">{file.summary || t('waitingAnalysis')}</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {file.keywords?.map((k, i) => (
+                                                <span key={i} className="text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full">#{k}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                {files.length === 0 && (
+                                    <p className="text-gray-500 text-center text-sm mt-10">{t('noFiles')}</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <Modal isOpen={showSummary} onClose={() => setShowSummary(false)} title={t('summaryTitle')} closeText={t('closeBtn')}>
+                        {analyzedFiles.length > 0 ? (
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th className="p-3 border-b border-gray-600 bg-gray-700">{t('tableFile')}</th>
+                                        <th className="p-3 border-b border-gray-600 bg-gray-700">{t('tableSummary')}</th>
+                                        <th className="p-3 border-b border-gray-600 bg-gray-700">{t('tableKeywords')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {analyzedFiles.map((file, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-700">
+                                            <td className="p-3 border-b border-gray-700 font-medium text-blue-300">{file.name}</td>
+                                            <td className="p-3 border-b border-gray-700 text-gray-300">{file.summary}</td>
+                                            <td className="p-3 border-b border-gray-700">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {file.keywords?.map((k, i) => (
+                                                        <span key={i} className="text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full">#{k}</span>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p className="text-center text-gray-400 py-8">{t('noAnalyzedFiles')}</p>
+                        )}
+                    </Modal>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
